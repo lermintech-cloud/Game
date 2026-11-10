@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Lucky Student Wheel • วงล้อสุ่มนักเรียน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--wheel:600px;--pw:380px}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;color:#fff;font-family:"Kanit","Noto Sans Thai",system-ui,sans-serif;overflow:hidden;display:flex;flex-direction:column;
+ background:linear-gradient(125deg,#ff2d95,#7b2ff7,#1fa2ff,#12d8a6,#ffb200,#ff2d95);background-size:400% 400%;animation:bg 18s ease infinite}
+@keyframes bg{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+body:before{content:"";position:fixed;inset:0;background:radial-gradient(circle at 50% 45%,#ffffff40,transparent 55%),radial-gradient(circle at 10% 90%,#0000004d,transparent 45%);pointer-events:none}
+#sparkles{position:fixed;inset:0;pointer-events:none;z-index:0}
+
+header{position:relative;z-index:2;text-align:center;padding:12px 70px 2px;transition:.3s}
+.eyebrow{font-size:12px;letter-spacing:.3em;font-weight:800;color:#fff8c2;text-shadow:0 2px 8px #0006}
+h1{margin:0;font-size:clamp(26px,4.6vw,54px);font-weight:800;line-height:1.1;letter-spacing:.03em;
+ background:linear-gradient(90deg,#fff7ae,#fff,#aef3ff,#fff,#ffd1f0,#fff7ae);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+ animation:shine 5s linear infinite;filter:drop-shadow(0 4px 10px #0007)}
+@keyframes shine{to{background-position:300% 0}}
+header p{margin:2px 0 0;font-size:14px;color:#fff;text-shadow:0 2px 6px #0007}
+body.full header{display:none}
+
+.top-btns{position:fixed;top:12px;right:12px;z-index:30;display:flex;gap:8px}
+.icon-btn{width:46px;height:46px;border-radius:50%;border:2px solid #fff9;background:#00000040;color:#fff;font-size:20px;cursor:pointer;backdrop-filter:blur(8px);transition:.2s;display:grid;place-items:center}
+.icon-btn:hover{background:#00000070;transform:scale(1.1)}
+body.panel-open #btnPanel{background:#ffd60a;color:#2a1b3d}
+
+.main{position:relative;z-index:1;flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 8px 10px;transition:margin .3s}
+@media(min-width:900px){body.panel-open .main{margin-right:var(--pw)}}
+.wheel-wrap{position:relative;width:var(--wheel);height:var(--wheel);filter:drop-shadow(0 20px 30px #0008)}
+canvas#wheel{width:100%;height:100%;display:block;cursor:pointer}
+.pointer{position:absolute;z-index:3;top:-3.2%;left:50%;width:9%;margin-left:-4.5%;transform-origin:50% 25%;pointer-events:none;filter:drop-shadow(0 4px 6px #000a)}
+.controls{display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:8px}
+.spin-btn{border:3px solid #fff;border-radius:999px;padding:12px 46px;font:800 clamp(18px,2.6vw,26px) "Kanit",sans-serif;letter-spacing:.06em;color:#3a0b52;
+ background:linear-gradient(100deg,#fff36b,#ff9f1c,#ff5fa2,#ff9f1c,#fff36b);background-size:250% 100%;animation:shine 3s linear infinite;box-shadow:0 8px 0 #a3185d,0 14px 30px #0006;cursor:pointer;transition:transform .15s}
+.spin-btn:hover{transform:translateY(-3px) scale(1.04)}.spin-btn:active{transform:translateY(4px);box-shadow:0 3px 0 #a3185d,0 6px 14px #0006}
+.spin-btn:disabled{filter:grayscale(.6);opacity:.6;cursor:not-allowed;animation:none}
+.hint{font-size:13px;color:#fff;text-shadow:0 2px 6px #0008;min-height:18px}
+
+/* settings drawer */
+.panel{position:fixed;z-index:20;top:0;right:0;bottom:0;width:min(var(--pw),94vw);padding:70px 16px 18px;overflow:auto;transform:translateX(105%);transition:transform .35s cubic-bezier(.2,.9,.3,1);
+ background:linear-gradient(170deg,#2b0f54f2,#10173ff2);border-left:2px solid #ffffff55;backdrop-filter:blur(14px);box-shadow:-20px 0 60px #0007}
+body.panel-open .panel{transform:none}
+.panel h2{margin:0 0 8px;font-size:18px;color:#ffe45e}
+.sec{margin-bottom:16px}.lbl{font-size:13px;color:#e8defa;margin-bottom:7px;display:block}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{border:2px solid #ffffff55;background:#ffffff14;color:#fff;border-radius:999px;padding:6px 13px;font:600 14px "Kanit",sans-serif;cursor:pointer;transition:.15s}
+.chip small{opacity:.75;font-weight:400}
+.chip.on{background:linear-gradient(100deg,#ff2d95,#ff9f1c);border-color:#fff;box-shadow:0 0 14px #ff2d9588}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#ffffff14;border:1px solid #ffffff30;border-radius:14px;padding:8px;text-align:center}.stat strong{display:block;font-size:26px;color:#ffe45e}.stat span{font-size:11px;color:#e0d6f5}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:2px solid #ffffff50;background:#ffffff16;color:#fff;padding:8px 13px;border-radius:12px;cursor:pointer;font:600 14px "Kanit",sans-serif}.btn:hover{background:#ffffff30}
+.btn.gold{background:linear-gradient(100deg,#ffd60a,#ff9f1c);color:#2a1b3d;border-color:#fff}
+.history,.absent{max-height:190px;overflow:auto;background:#0000004d;border-radius:12px;padding:6px 8px;border:1px solid #ffffff25}
+.hitem{font-size:14px;padding:6px 3px;border-bottom:1px dashed #ffffff22}.hitem:last-child{border:0}.hitem b{color:#ffe45e}
+.empty{font-size:13px;color:#c9bde4;text-align:center;padding:12px}
+.absent label{display:flex;gap:8px;align-items:center;font-size:14px;padding:4px 2px;cursor:pointer}
+.absent input{width:17px;height:17px;accent-color:#ff2d95}
+details summary{cursor:pointer;font-size:13px;color:#e8defa;margin-bottom:7px}
+.keys{font-size:12px;color:#cfc3ea;line-height:1.7}.keys kbd{background:#ffffff25;border-radius:5px;padding:1px 7px;font-family:inherit}
+
+/* winner */
+.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:#10002ccc;backdrop-filter:blur(8px);z-index:50;padding:16px}
+.modal.show{display:flex}
+.card{position:relative;z-index:2;width:min(640px,96vw);text-align:center;padding:34px 22px 28px;border-radius:32px;border:4px solid #fff;
+ background:linear-gradient(145deg,#ff2d95,#7b2ff7 55%,#1fa2ff);box-shadow:0 0 0 8px #ffd60a,0 0 90px #ffd60aaa,0 30px 80px #000a;animation:pop .7s cubic-bezier(.2,1.5,.4,1)}
+@keyframes pop{from{transform:scale(.4) rotate(-8deg);opacity:0}to{transform:none;opacity:1}}
+.crown{font-size:64px;animation:bounce 1s ease infinite;filter:drop-shadow(0 0 18px #ffd60a)}
+@keyframes bounce{50%{transform:translateY(-10px) scale(1.1)}}
+.card .tag{font-size:13px;font-weight:800;letter-spacing:.3em;color:#fff6a8}
+.card h2{margin:10px 0 4px;font-size:clamp(30px,7vw,60px);line-height:1.2;font-weight:800;color:#fff;text-shadow:0 4px 0 #0004,0 0 30px #ffd60a99;overflow-wrap:anywhere}
+.card .cls{display:inline-block;margin:8px 0;padding:6px 22px;border-radius:999px;background:#ffd60a;color:#3a0b52;font-weight:800;font-size:clamp(18px,3.4vw,26px)}
+.card .num{font-size:15px;color:#ffe;opacity:.9}
+.card .cong{margin:14px 0 20px;font-size:18px}
+.card button{padding:12px 34px;border:3px solid #fff;border-radius:999px;background:linear-gradient(100deg,#fff36b,#ff9f1c);color:#3a0b52;font:800 18px "Kanit",sans-serif;cursor:pointer}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:60}
+@media(max-height:560px){header{display:none}}
+</style>
+</head>
+<body>
+<canvas id="sparkles"></canvas>
+
+<header>
+ <div class="eyebrow">✦ CLASSROOM GAME SHOW ✦</div>
+ <h1>LUCKY STUDENT WHEEL</h1>
+ <p>วงล้อสุ่มนักเรียน โรงเรียนบ้านไร่ • ลุ้นทุกวินาที เซอร์ไพรส์ทุกครั้ง</p>
+</header>
+
+<div class="top-btns">
+ <button class="icon-btn" id="btnSound" title="เปิด/ปิดเสียง (M)">🔊</button>
+ <button class="icon-btn" id="btnFull" title="เต็มหน้าจอ (F)">⛶</button>
+ <button class="icon-btn" id="btnPanel" title="ตั้งค่า (S)">⚙</button>
+</div>
+
+<div class="main" id="main">
+ <div class="wheel-wrap" id="wrap">
+  <svg class="pointer" id="pointer" viewBox="0 0 60 90"><defs><linearGradient id="pg" x1="0" x2="1"><stop offset="0" stop-color="#fff36b"/><stop offset="1" stop-color="#ff9f1c"/></linearGradient></defs>
+   <path d="M30 88 L4 30 A28 28 0 1 1 56 30 Z" fill="url(#pg)" stroke="#fff" stroke-width="4" stroke-linejoin="round"/><circle cx="30" cy="28" r="9" fill="#ff2d95" stroke="#fff" stroke-width="3"/></svg>
+  <canvas id="wheel" aria-label="วงล้อสุ่มชื่อนักเรียน"></canvas>
+ </div>
+ <div class="controls">
+  <button class="spin-btn" id="spin">✦ หมุนวงล้อ ✦</button>
+  <div class="hint" id="hint"></div>
+ </div>
+</div>
+
+<aside class="panel" id="panel">
+ <h2>⚙ ตั้งค่า</h2>
+ <div class="sec"><span class="lbl">เลือกชั้นที่จะสุ่ม (เลือกได้หลายชั้น)</span><div class="chips" id="chips"></div></div>
+ <div class="sec"><div class="stats">
+  <div class="stat"><strong id="total">0</strong><span>ในวงล้อทั้งหมด</span></div>
+  <div class="stat"><strong id="remaining">0</strong><span>ยังไม่ถูกสุ่ม</span></div>
+  <div class="stat"><strong id="picked">0</strong><span>สุ่มแล้ว</span></div></div></div>
+ <div class="sec row">
+  <button class="btn" id="toggleRepeat">ไม่ให้สุ่มซ้ำ: ON</button>
+  <button class="btn gold" id="reset">↻ เริ่มรอบใหม่</button>
+ </div>
+ <div class="sec"><span class="lbl">🏆 ประวัติผู้ถูกสุ่ม</span><div class="history" id="history"></div></div>
+ <div class="sec"><details><summary>🙋 ติ๊กคนที่ไม่มา/ไม่ต้องการสุ่ม (ตัดออกจากวงล้อ)</summary>
+  <div class="row" style="margin-bottom:7px"><button class="btn" id="absClear">ล้างที่ติ๊กทั้งหมด</button></div>
+  <div class="absent" id="absent"></div></details></div>
+ <div class="keys">คีย์ลัด: <kbd>Space</kbd> หมุน • <kbd>S</kbd> ซ่อน/แสดงตั้งค่า • <kbd>F</kbd> เต็มหน้าจอ • <kbd>M</kbd> เสียง<br>คลิกที่กลางวงล้อก็หมุนได้</div>
+</aside>
+
+<div class="modal" id="modal"><div class="card">
+ <div class="crown">👑</div><div class="tag">THE LUCKY STUDENT IS</div>
+ <h2 id="wName"></h2><div class="cls" id="wClass"></div><div class="num" id="wNum"></div>
+ <div class="cong">🎉 ขอเสียงปรบมือให้ผู้โชคดีด้วยครับ! 🎉</div>
+ <button id="close">ยอดเยี่ยม!</button></div></div>
+<canvas id="confetti"></canvas>
+
+<script src="students.js"></script>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const canvas=$('wheel'),ctx=canvas.getContext('2d');
+const COLORS=[['#ff2d95',0],['#ff9f1c',1],['#ffe600',1],['#2ee59d',1],['#18c5ff',1],['#7b2ff7',0],['#ff5252',0],['#9be22f',1]];
+const ORDER=['อ.1','อ.2','อ.3','ป.1','ป.2','ป.3','ป.4','ป.5','ป.6','ม.1','ม.2','ม.3'];
+const classes=[...new Set(STUDENTS.map(s=>s.c))].sort((a,b)=>ORDER.indexOf(a)-ORDER.indexOf(b));
+let selected=new Set(classes),absent=new Set(),noRepeat=true,soundOn=true;
+let pool=[],remaining=[],history=[],rotation=0,spinning=false,kick=0,lastIdx=-1;
+
+// ---------- persistence ----------
+try{const s=JSON.parse(localStorage.getItem('luckywheel')||'{}');
+ if(s.sel&&s.sel.length){selected=new Set(s.sel.filter(c=>classes.includes(c)));if(!selected.size)selected=new Set(classes);}
+ if(s.abs)absent=new Set(s.abs);if(s.nr===false)noRepeat=false;if(s.snd===false)soundOn=false;}catch(e){}
+function save(){try{localStorage.setItem('luckywheel',JSON.stringify({sel:[...selected],abs:[...absent],nr:noRepeat,snd:soundOn}));}catch(e){}}
+
+// ---------- data ----------
+const key=s=>s.c+'|'+s.n;
+function rebuild(){
+ const list=STUDENTS.filter(s=>selected.has(s.c)&&!absent.has(key(s)));
+ const dup={};list.forEach(s=>dup[s.f]=(dup[s.f]||0)+1);
+ pool=list.map(s=>({...s,label:dup[s.f]>1?s.f+' '+s.l.charAt(0)+'.':s.f,full:s.p+s.f+' '+s.l}));
+ remaining=[...pool];history=[];rotation=0;refresh();
+}
+function shortPrefix(p){return p==='เด็กชาย'?'ด.ช.':p==='เด็กหญิง'?'ด.ญ.':p;}
+
+// ---------- UI ----------
+function renderChips(){
+ const total=STUDENTS.length;
+ let h=`<button class="chip ${selected.size===classes.length?'on':''}" data-c="*">ทั้งหมด <small>${total}</small></button>`;
+ classes.forEach(c=>{const n=STUDENTS.filter(s=>s.c===c).length;h+=`<button class="chip ${selected.has(c)?'on':''}" data-c="${c}">${c} <small>${n}</small></button>`;});
+ $('chips').innerHTML=h;
+}
+function renderAbsent(){
+ $('absent').innerHTML=STUDENTS.filter(s=>selected.has(s.c)).map(s=>`<label><input type="checkbox" data-k="${key(s)}" ${absent.has(key(s))?'checked':''}> <span>${s.c} • ${shortPrefix(s.p)}${s.f} ${s.l}</span></label>`).join('')||'<div class="empty">ยังไม่ได้เลือกชั้น</div>';
+}
+function esc(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function refresh(){
+ $('total').textContent=pool.length;$('remaining').textContent=remaining.length;$('picked').textContent=history.length;
+ $('spin').disabled=spinning||!remaining.length;
+ $('spin').textContent=remaining.length?'✦ หมุนวงล้อ ✦':(pool.length?'ครบทุกคนแล้ว 🎉':'ยังไม่มีรายชื่อ');
+ $('hint').textContent=remaining.length?`เหลือ ${remaining.length} คน • กด Space หรือคลิกกลางวงล้อได้`:(pool.length?'กด “เริ่มรอบใหม่” ในตั้งค่าเพื่อสุ่มอีกรอบ':'เปิดตั้งค่า (⚙) แล้วเลือกชั้น');
+ $('history').innerHTML=history.length?history.slice().reverse().map((x,i)=>`<div class="hitem"><b>${history.length-i}.</b> ${esc(x.full)} <small>(${x.c})</small></div>`).join(''):'<div class="empty">ยังไม่มีรายชื่อที่ถูกสุ่ม</div>';
+ $('toggleRepeat').textContent='ไม่ให้สุ่มซ้ำ: '+(noRepeat?'ON':'OFF');
+ $('btnSound').textContent=soundOn?'🔊':'🔇';
+}
+$('chips').onclick=e=>{const b=e.target.closest('.chip');if(!b||spinning)return;const c=b.dataset.c;
+ if(c==='*'){selected=new Set(classes);}
+ else{ if(selected.size===classes.length)selected=new Set([c]); else if(selected.has(c)){selected.delete(c);if(!selected.size)selected=new Set(classes);}else selected.add(c);}
+ save();renderChips();renderAbsent();rebuild();};
+$('absent').onchange=e=>{const k=e.target.dataset.k;if(!k||spinning)return;e.target.checked?absent.add(k):absent.delete(k);save();rebuild();};
+$('absClear').onclick=()=>{if(spinning)return;absent.clear();save();renderAbsent();rebuild();};
+$('reset').onclick=()=>{if(spinning)return;remaining=[...pool];history=[];refresh();};
+$('toggleRepeat').onclick=()=>{noRepeat=!noRepeat;save();refresh();};
+function togglePanel(){document.body.classList.toggle('panel-open');setTimeout(fit,320);fit();}
+function toggleSound(){soundOn=!soundOn;save();refresh();if(soundOn)blip(660,.08,.1);}
+function toggleFull(){if(!document.fullscreenElement)(document.documentElement.requestFullscreen||(()=>{})).call(document.documentElement);else document.exitFullscreen&&document.exitFullscreen();}
+$('btnPanel').onclick=togglePanel;$('btnSound').onclick=toggleSound;$('btnFull').onclick=toggleFull;
+document.addEventListener('fullscreenchange',()=>{document.body.classList.toggle('full',!!document.fullscreenElement);setTimeout(fit,100);});
+
+// ---------- sizing ----------
+function fit(){
+ const m=$('main'),cs=$('wrap').nextElementSibling;
+ const w=m.clientWidth-16,h=m.clientHeight-cs.offsetHeight-22;
+ const s=Math.max(220,Math.floor(Math.min(w,h)));
+ document.documentElement.style.setProperty('--wheel',s+'px');
+ const dpr=Math.min(window.devicePixelRatio||1,2);
+ canvas.width=canvas.height=Math.round(s*dpr);
+}
+new ResizeObserver(fit).observe($('main'));window.addEventListener('resize',fit);
+
+// ---------- draw ----------
+function draw(t){
+ const S=canvas.width,k=S/1000;ctx.setTransform(k,0,0,k,0,0);ctx.clearRect(0,0,1000,1000);
+ const cx=500,cy=500,R=448,n=remaining.length;
+ // outer glow rim
+ const rim=ctx.createLinearGradient(0,0,1000,1000);rim.addColorStop(0,'#fff6a8');rim.addColorStop(.5,'#ffb400');rim.addColorStop(1,'#ff5fa2');
+ ctx.beginPath();ctx.arc(cx,cy,R+30,0,7);ctx.fillStyle=rim;ctx.fill();
+ ctx.beginPath();ctx.arc(cx,cy,R+8,0,7);ctx.fillStyle='#2a0b52';ctx.fill();
+ ctx.save();ctx.translate(cx,cy);ctx.rotate(rotation);
+ if(!n){ctx.beginPath();ctx.arc(0,0,R,0,7);ctx.fillStyle='#4a2a8a';ctx.fill();
+  ctx.fillStyle='#fff';ctx.textAlign='center';ctx.font='700 40px Kanit,system-ui';ctx.fillText(pool.length?'ครบทุกคนแล้ว!':'เลือกชั้นในตั้งค่า ⚙',0,-130);}
+ else{
+  const step=Math.PI*2/n;
+  const fs0=n<=8?52:n<=16?42:n<=28?32:n<=45?25:n<=65?19:15;
+  for(let i=0;i<n;i++){
+   const a=-Math.PI/2+i*step,b=a+step;
+   let ci=i%COLORS.length;if(i===n-1&&n>1&&ci===0)ci=3;
+   ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,R,a,b);ctx.closePath();
+   const g=ctx.createRadialGradient(0,0,90,0,0,R);g.addColorStop(0,COLORS[ci][0]+'cc');g.addColorStop(.35,COLORS[ci][0]);g.addColorStop(1,COLORS[ci][0]);
+   ctx.fillStyle=g;ctx.fill();ctx.strokeStyle='#ffffffdd';ctx.lineWidth=n>50?1.6:3.5;ctx.stroke();
+   ctx.save();ctx.rotate(a+step/2);ctx.textAlign='right';ctx.textBaseline='middle';
+   let fs=fs0;ctx.font=`700 ${fs}px Kanit,system-ui,sans-serif`;
+   const w=ctx.measureText(remaining[i].label).width,maxW=R-125;if(w>maxW){fs*=maxW/w;ctx.font=`700 ${fs}px Kanit,system-ui,sans-serif`;}
+   if(COLORS[ci][1]){ctx.fillStyle='#2a0b52';ctx.shadowColor='#ffffff99';}else{ctx.fillStyle='#fff';ctx.shadowColor='#000c';}
+   ctx.shadowBlur=3;ctx.fillText(remaining[i].label,R-24,0);ctx.restore();
+  }
+ }
+ // hub
+ const hg=ctx.createRadialGradient(-20,-25,10,0,0,100);hg.addColorStop(0,'#fff6a8');hg.addColorStop(.6,'#ff9f1c');hg.addColorStop(1,'#d6246e');
+ ctx.beginPath();ctx.arc(0,0,92,0,7);ctx.fillStyle=hg;ctx.fill();ctx.lineWidth=10;ctx.strokeStyle='#fff';ctx.stroke();
+ ctx.restore();
+ ctx.fillStyle='#3a0b52';ctx.textAlign='center';ctx.textBaseline='middle';
+ ctx.font='800 34px Kanit,system-ui';ctx.fillText(spinning?'...':'หมุน!',cx,cy-8);ctx.font='700 17px Kanit,system-ui';ctx.fillText('LUCKY',cx,cy+26);
+ // bulbs
+ const ph=Math.floor(t/260)%2;
+ for(let i=0;i<40;i++){const a=i/40*Math.PI*2,x=cx+(R+19)*Math.cos(a),y=cy+(R+19)*Math.sin(a),on=(i+ph)%2===0;
+  ctx.beginPath();ctx.arc(x,y,9,0,7);ctx.fillStyle=on?'#ffffff':'#ff2d95';ctx.shadowColor=on?'#fff36b':'#ff2d95';ctx.shadowBlur=on?22:6;ctx.fill();ctx.shadowBlur=0;}
+}
+function idxUnder(){const n=remaining.length;if(!n)return -1;const step=Math.PI*2/n;const r=((-rotation)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);return Math.floor(r/step)%n;}
+function loop(t){
+ kick*=0.86;$('pointer').style.transform=`rotate(${-kick*22}deg)`;
+ draw(t);requestAnimationFrame(loop);
+}
+
+// ---------- sound ----------
+let ac=null;
+function A(){if(!ac){try{ac=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}if(ac&&ac.state==='suspended')ac.resume();return ac;}
+function blip(f,d=.05,v=.12,type='triangle',when=0){if(!soundOn)return;const c=A();if(!c)return;const o=c.createOscillator(),g=c.createGain(),t=c.currentTime+when;
+ o.type=type;o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+d+.02);}
+function whoosh(){if(!soundOn)return;const c=A();if(!c)return;const o=c.createOscillator(),g=c.createGain(),t=c.currentTime;o.type='sawtooth';o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(900,t+.7);
+ g.gain.setValueAtTime(.001,t);g.gain.exponentialRampToValueAtTime(.08,t+.15);g.gain.exponentialRampToValueAtTime(.001,t+.8);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+.85);}
+function fanfare(){if(!soundOn)return;
+ [523,659,784,1047].forEach((f,i)=>{blip(f,.22,.16,'square',i*.11);blip(f*2,.22,.05,'triangle',i*.11);});
+ [523,659,784,1047,1319].forEach(f=>blip(f,.9,.1,'triangle',.5));
+ [1568,1319,1568,2093].forEach((f,i)=>blip(f,.15,.07,'sine',.55+i*.09));
+ applause(.5,2.6);}
+function applause(delay,dur){const c=A();if(!c)return;const len=c.sampleRate*dur,buf=c.createBuffer(1,len,c.sampleRate),d=buf.getChannelData(0);
+ for(let i=0;i<len;i++){const env=Math.min(1,i/(c.sampleRate*.25))*Math.pow(1-i/len,1.4);d[i]=(Math.random()*2-1)*env*(Math.random()<.04?1:.35);}
+ const s=c.createBufferSource(),f=c.createBiquadFilter(),g=c.createGain();s.buffer=buf;f.type='bandpass';f.frequency.value=2400;f.Q.value=.6;g.gain.value=.5;s.connect(f);f.connect(g);g.connect(c.destination);s.start(c.currentTime+delay);}
+
+// ---------- spin ----------
+function spin(){
+ if(spinning||!remaining.length)return;
+ A();spinning=true;refresh();whoosh();
+ const n=remaining.length,wi=Math.floor(Math.random()*n),step=Math.PI*2/n;
+ const jitter=(Math.random()-.5)*step*.7; // land at a random spot within the segment
+ const target=-(wi+.5)*step+jitter;
+ const cur=((rotation%(Math.PI*2))+Math.PI*2)%(Math.PI*2);
+ const delta=(((target-cur)%(Math.PI*2))+Math.PI*2)%(Math.PI*2);
+ const total=(6+Math.floor(Math.random()*3))*Math.PI*2+delta;
+ const start=rotation,dur=7000+Math.random()*1500,t0=performance.now();lastIdx=idxUnder();
+ (function frame(now){
+  const p=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-p,4.5);
+  rotation=start+total*e;
+  const ix=idxUnder();if(ix!==lastIdx){lastIdx=ix;kick=1;blip(500+Math.random()*350,.035,.1+.06*(1-p));}
+  if(p<1)requestAnimationFrame(frame);
+  else{rotation=start+total;const w=remaining[wi];history.push(w);if(noRepeat)remaining.splice(wi,1);spinning=false;refresh();fanfare();setTimeout(()=>showWinner(w),300);}
+ })(t0);
+}
+function showWinner(w){
+ $('wName').textContent=w.full;$('wClass').textContent='ชั้น '+w.c;$('wNum').textContent=`เลขประจำตัว ${w.n} • ผู้ถูกสุ่มลำดับที่ ${history.length}`;
+ $('modal').classList.add('show');confetti();
+}
+function closeModal(){$('modal').classList.remove('show');}
+$('close').onclick=closeModal;$('modal').onclick=e=>{if(e.target===$('modal'))closeModal();};
+$('spin').onclick=spin;
+canvas.addEventListener('click',e=>{const r=canvas.getBoundingClientRect(),x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2;if(Math.hypot(x,y)<r.width*.1)spin();});
+document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;
+ if(e.code==='Space'){e.preventDefault();if($('modal').classList.contains('show'))closeModal();else spin();}
+ else if(e.key==='Escape')closeModal();
+ else if(e.key==='s'||e.key==='S')togglePanel();
+ else if(e.key==='f'||e.key==='F')toggleFull();
+ else if(e.key==='m'||e.key==='M')toggleSound();});
+
+// ---------- confetti & sparkles ----------
+function confetti(){const c=$('confetti'),g=c.getContext('2d');c.width=innerWidth;c.height=innerHeight;
+ const cols=['#ff2d95','#ffd60a','#18c5ff','#2ee59d','#ff9f1c','#fff','#9b6bff'];
+ const bits=Array.from({length:260},()=>({x:Math.random()*c.width,y:-Math.random()*c.height*.8,v:2.5+Math.random()*6,s:5+Math.random()*8,a:Math.random()*6,r:(Math.random()-.5)*.3,col:cols[Math.random()*cols.length|0],d:Math.random()*6}));
+ let f=0;(function go(){g.clearRect(0,0,c.width,c.height);bits.forEach(p=>{p.y+=p.v;p.x+=Math.sin(p.y/30+p.d)*1.6;p.a+=p.r;g.fillStyle=p.col;g.save();g.translate(p.x,p.y);g.rotate(p.a);g.fillRect(-p.s/2,-p.s/2,p.s,p.s*1.6);g.restore();});
+  if(++f<300&&$('modal').classList.contains('show'))requestAnimationFrame(go);else g.clearRect(0,0,c.width,c.height);})();}
+(function sparkles(){const c=$('sparkles'),g=c.getContext('2d');let st=[];
+ function rs(){c.width=innerWidth;c.height=innerHeight;st=Array.from({length:55},()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:1+Math.random()*3,p:Math.random()*6,sp:.01+Math.random()*.03}));}
+ rs();addEventListener('resize',rs);
+ (function a(){g.clearRect(0,0,c.width,c.height);st.forEach(s=>{s.p+=s.sp;const o=(Math.sin(s.p)+1)/2;g.globalAlpha=o*.9;g.fillStyle='#fff';g.beginPath();g.arc(s.x,s.y,s.r*(.5+o),0,7);g.fill();});g.globalAlpha=1;requestAnimationFrame(a);})();})();
+
+// ---------- init ----------
+renderChips();renderAbsent();rebuild();fit();requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
